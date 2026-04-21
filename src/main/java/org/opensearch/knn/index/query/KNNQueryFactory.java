@@ -5,27 +5,30 @@
 
 package org.opensearch.knn.index.query;
 
-import lombok.NonNull;
-import lombok.extern.log4j.Log4j2;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.join.BitSetProducer;
-import org.opensearch.index.query.QueryShardContext;
-import org.opensearch.knn.index.VectorDataType;
-import org.opensearch.knn.index.engine.KNNEngine;
-import org.opensearch.knn.index.query.common.QueryUtils;
-import org.opensearch.knn.index.query.lucenelib.OSKnnByteVectorQuery;
-import org.opensearch.knn.index.query.lucenelib.OSKnnFloatVectorQuery;
-import org.opensearch.knn.index.query.lucenelib.NestedKnnVectorQueryFactory;
-import org.opensearch.knn.index.query.lucene.LuceneEngineKnnVectorQuery;
-import org.opensearch.knn.index.query.nativelib.NativeEngineKnnVectorQuery;
-import org.opensearch.knn.index.query.rescore.RescoreContext;
-import org.opensearch.knn.index.util.IndexHyperParametersUtil;
+import static org.opensearch.knn.common.KNNConstants.EXPAND_NESTED;
+import static org.opensearch.knn.index.engine.BuiltinKNNEngine.ENGINES_SUPPORTING_NESTED_FIELDS;
 
 import java.util.Locale;
 import java.util.Map;
 
-import static org.opensearch.knn.common.KNNConstants.EXPAND_NESTED;
-import static org.opensearch.knn.index.engine.KNNEngine.ENGINES_SUPPORTING_NESTED_FIELDS;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.join.BitSetProducer;
+import org.opensearch.index.query.QueryShardContext;
+import org.opensearch.knn.common.KNNConstants;
+import org.opensearch.knn.index.KNNSettings;
+import org.opensearch.knn.index.VectorDataType;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
+import org.opensearch.knn.index.engine.KNNEngine;
+import org.opensearch.knn.index.query.common.QueryUtils;
+import org.opensearch.knn.index.query.lucene.LuceneEngineKnnVectorQuery;
+import org.opensearch.knn.index.query.lucenelib.NestedKnnVectorQueryFactory;
+import org.opensearch.knn.index.query.lucenelib.OSKnnByteVectorQuery;
+import org.opensearch.knn.index.query.lucenelib.OSKnnFloatVectorQuery;
+import org.opensearch.knn.index.query.nativelib.NativeEngineKnnVectorQuery;
+import org.opensearch.knn.index.query.rescore.RescoreContext;
+
+import lombok.NonNull;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Creates the Lucene k-NN queries
@@ -72,7 +75,7 @@ public class KNNQueryFactory extends BaseQueryFactory {
             );
         }
 
-        if (KNNEngine.getEnginesThatCreateCustomSegmentFiles().contains(createQueryRequest.getKnnEngine())) {
+        if (BuiltinKNNEngine.getEnginesThatCreateCustomSegmentFiles().contains(createQueryRequest.getKnnEngine())) {
             final Query validatedFilterQuery = validateFilterQuerySupport(filterQuery, createQueryRequest.getKnnEngine());
 
             log.debug(
@@ -135,7 +138,7 @@ public class KNNQueryFactory extends BaseQueryFactory {
             overSampledK = rescoreContext.getFirstPassK(k, false, getDimension(vector, byteVector));
         }
 
-        int luceneK = Math.max(overSampledK, IndexHyperParametersUtil.getHNSWEFSearchValue(methodParameters, indexName));
+        int luceneK = Math.max(overSampledK, getHNSWEFSearchValue(methodParameters, indexName));
         log.debug("Creating Lucene k-NN query for index: {}, field:{}, k: {}, luceneK: {}", indexName, fieldName, k, luceneK);
         Query luceneKnnQuery = new LuceneEngineKnnVectorQuery(
             getKnnVectorQuery(
@@ -176,7 +179,7 @@ public class KNNQueryFactory extends BaseQueryFactory {
 
     private static Query validateFilterQuerySupport(final Query filterQuery, final KNNEngine knnEngine) {
         log.debug("filter query {}, knnEngine {}", filterQuery, knnEngine);
-        if (filterQuery != null && KNNEngine.getEnginesThatSupportsFilters().contains(knnEngine)) {
+        if (filterQuery != null && BuiltinKNNEngine.getEnginesThatSupportsFilters().contains(knnEngine)) {
             return filterQuery;
         }
         return null;
@@ -227,5 +230,25 @@ public class KNNQueryFactory extends BaseQueryFactory {
                 expandNested,
                 k
             );
+    }
+
+    /**
+     * Determine the ef_search value using the following priority order:
+     * 1. Use ef_search from method parameters if specified in the query
+     * 2. Otherwise, use ef_search from index setting (knn.algo_param.ef_search)
+     * 3. If neither exists, fall back to default ef_search value based on index version
+     *
+     * @param methodParameters method parameters from the query
+     * @param indexName name of the index
+     * @return ef_search value to use
+     */
+    public static int getHNSWEFSearchValue(final Map<String, ?> methodParameters, final String indexName) {
+        if (methodParameters != null && methodParameters.containsKey(KNNConstants.METHOD_PARAMETER_EF_SEARCH)) {
+            return (Integer) methodParameters.get(KNNConstants.METHOD_PARAMETER_EF_SEARCH);
+        }
+
+        // Returns ef_search from index setting (knn.algo_param.ef_search) or
+        // falls back to default ef_search value based on index version
+        return KNNSettings.getEfSearchParam(indexName);
     }
 }

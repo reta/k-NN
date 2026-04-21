@@ -25,6 +25,7 @@ import org.opensearch.knn.common.KNNConstants;
 import org.opensearch.knn.index.KNNSettings;
 import org.opensearch.knn.index.SpaceType;
 import org.opensearch.knn.index.VectorDataType;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
 import org.opensearch.knn.index.engine.KNNEngine;
 import org.opensearch.knn.index.store.IndexInputWithBuffer;
 import org.opensearch.knn.jni.JNICommons;
@@ -70,7 +71,7 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
         // Create basic nmslib HNSW index
         Path tempDirPath = createTempDir();
         try (Directory directory = newFSDirectory(tempDirPath)) {
-            KNNEngine knnEngine = KNNEngine.NMSLIB;
+            KNNEngine knnEngine = BuiltinKNNEngine.NMSLIB;
             String indexFileName = "test1" + knnEngine.getExtension();
             int numVectors = 10;
             int dimension = 10;
@@ -92,7 +93,7 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
             }
 
             ExecutorService executorService = Executors.newSingleThreadExecutor();
-            NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
+            IndexAllocation indexAllocation = new IndexAllocation(
                 executorService,
                 memoryAddress,
                 (int) directory.fileLength(indexFileName) / 1024,
@@ -122,7 +123,7 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
     @SneakyThrows
     public void testClose_whenBinaryFiass_thenSuccess() {
         Path tempDirPath = createTempDir();
-        KNNEngine knnEngine = KNNEngine.FAISS;
+        KNNEngine knnEngine = BuiltinKNNEngine.FAISS;
         String indexFileName = "test1" + knnEngine.getExtension();
         try (Directory directory = newFSDirectory(tempDirPath)) {
             int numVectors = 10;
@@ -153,7 +154,7 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
             }
 
             ExecutorService executorService = Executors.newSingleThreadExecutor();
-            NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
+            IndexAllocation indexAllocation = new IndexAllocation(
                 executorService,
                 memoryAddress,
                 (int) directory.fileLength(indexFileName) / 1024,
@@ -184,14 +185,7 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
 
     public void testIndexAllocation_getMemoryAddress() {
         long memoryAddress = 12;
-        NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            null,
-            memoryAddress,
-            0,
-            null,
-            "test",
-            "test"
-        );
+        IndexAllocation indexAllocation = new IndexAllocation(null, memoryAddress, 0, null, "test", "test");
 
         assertEquals(memoryAddress, indexAllocation.getMemoryAddress());
     }
@@ -199,14 +193,7 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
     public void testIndexAllocation_readLock() throws InterruptedException {
         // To test the readLock, we grab the readLock in the main thread and then start a thread that grabs the write
         // lock and updates testLockValue1. We ensure that the value is not updated until after we release the readLock
-        NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            null,
-            0,
-            0,
-            null,
-            "test",
-            "test"
-        );
+        IndexAllocation indexAllocation = new IndexAllocation(null, 0, 0, null, "test", "test");
 
         int initialValue = 10;
         int finalValue = 16;
@@ -235,14 +222,7 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
         AtomicReference<Exception> expectedException = new AtomicReference<>();
 
         // Executor based non-blocking close
-        NativeMemoryAllocation.IndexAllocation nonBlockingIndexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            mock(ExecutorService.class),
-            0,
-            0,
-            null,
-            "test",
-            "test"
-        );
+        IndexAllocation nonBlockingIndexAllocation = new IndexAllocation(mock(ExecutorService.class), 0, 0, null, "test", "test");
 
         executorService.submit(nonBlockingIndexAllocation::readLock);
         Future<?> closingThread = executorService.submit(nonBlockingIndexAllocation::close);
@@ -263,14 +243,7 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
         // Enable `KNN_FORCE_EVICT_CACHE_ENABLED_SETTING` to force it to block other threads.
         // Having it false will make `IndexAllocation` to run close logic in a different thread.
         when(clusterSettings.get(KNN_FORCE_EVICT_CACHE_ENABLED_SETTING)).thenReturn(true);
-        NativeMemoryAllocation.IndexAllocation blockingIndexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            mock(ExecutorService.class),
-            0,
-            0,
-            null,
-            "test",
-            "test"
-        );
+        IndexAllocation blockingIndexAllocation = new IndexAllocation(mock(ExecutorService.class), 0, 0, null, "test", "test");
 
         // Acquire a read lock
         blockingIndexAllocation.readLock();
@@ -298,14 +271,7 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
         // To test the writeLock, we first grab the writeLock in the main thread. Then we start another thread that
         // grabs the readLock and asserts testLockValue2 has been updated. Next in the main thread, we update the value
         // and release the writeLock.
-        NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            null,
-            0,
-            0,
-            null,
-            "test",
-            "test"
-        );
+        IndexAllocation indexAllocation = new IndexAllocation(null, 0, 0, null, "test", "test");
 
         int initialValue = 10;
         int finalValue = 16;
@@ -330,56 +296,28 @@ public class NativeMemoryAllocationTests extends KNNTestCase {
 
     public void testIndexAllocation_getSize() {
         int size = 12;
-        NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            null,
-            0,
-            size,
-            null,
-            "test",
-            "test"
-        );
+        IndexAllocation indexAllocation = new IndexAllocation(null, 0, size, null, "test", "test");
 
         assertEquals(size, indexAllocation.getSizeInKB());
     }
 
     public void testIndexAllocation_getKnnEngine() {
-        KNNEngine knnEngine = KNNEngine.DEFAULT;
-        NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            null,
-            0,
-            0,
-            knnEngine,
-            "test",
-            "test"
-        );
+        KNNEngine knnEngine = BuiltinKNNEngine.DEFAULT;
+        IndexAllocation indexAllocation = new IndexAllocation(null, 0, 0, knnEngine, "test", "test");
 
         assertEquals(knnEngine, indexAllocation.getKnnEngine());
     }
 
     public void testIndexAllocation_getIndexPath() {
         String indexPath = "test-path";
-        NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            null,
-            0,
-            0,
-            null,
-            indexPath,
-            "test"
-        );
+        IndexAllocation indexAllocation = new IndexAllocation(null, 0, 0, null, indexPath, "test");
 
         assertEquals(indexPath, indexAllocation.getVectorFileName());
     }
 
     public void testIndexAllocation_getOsIndexName() {
         String osIndexName = "test-index";
-        NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            null,
-            0,
-            0,
-            null,
-            "test",
-            osIndexName
-        );
+        IndexAllocation indexAllocation = new IndexAllocation(null, 0, 0, null, "test", osIndexName);
 
         assertEquals(osIndexName, indexAllocation.getOpenSearchIndexName());
     }

@@ -80,7 +80,7 @@ public abstract class NativeMemoryEntryContext<T extends NativeMemoryAllocation>
     public abstract T load() throws IOException;
 
     @Log4j2
-    public static class IndexEntryContext extends NativeMemoryEntryContext<NativeMemoryAllocation.IndexAllocation> {
+    public static class IndexEntryContext extends NativeMemoryEntryContext<IndexAllocation> {
 
         @Getter
         private final Directory directory;
@@ -193,7 +193,7 @@ public abstract class NativeMemoryEntryContext<T extends NativeMemoryAllocation>
         }
 
         @Override
-        public NativeMemoryAllocation.IndexAllocation load() throws IOException {
+        public IndexAllocation load() throws IOException {
             if (!isIndexGraphFileOpened()) {
                 throw new IllegalStateException("Index graph file is not open");
             }

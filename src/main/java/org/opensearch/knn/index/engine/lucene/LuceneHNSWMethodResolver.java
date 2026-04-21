@@ -9,8 +9,8 @@ import org.opensearch.Version;
 import org.opensearch.common.ValidationException;
 import org.opensearch.knn.index.SpaceType;
 import org.opensearch.knn.index.engine.AbstractMethodResolver;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
 import org.opensearch.knn.index.engine.Encoder;
-import org.opensearch.knn.index.engine.KNNEngine;
 import org.opensearch.knn.index.engine.KNNMethodConfigContext;
 import org.opensearch.knn.index.engine.KNNMethodContext;
 import org.opensearch.knn.index.engine.MethodComponent;
@@ -61,7 +61,7 @@ public class LuceneHNSWMethodResolver extends AbstractMethodResolver {
         validateConfig(knnMethodConfigContext, shouldRequireTraining);
         KNNMethodContext resolvedKNNMethodContext = initResolvedKNNMethodContext(
             knnMethodContext,
-            KNNEngine.LUCENE,
+            BuiltinKNNEngine.LUCENE,
             spaceType,
             METHOD_HNSW
         );
@@ -152,11 +152,11 @@ public class LuceneHNSWMethodResolver extends AbstractMethodResolver {
 
     // Method validates for explicit contradictions in the config
     private void validateConfig(KNNMethodConfigContext knnMethodConfigContext, boolean shouldRequireTraining) {
-        ValidationException validationException = validateNotTrainingContext(shouldRequireTraining, KNNEngine.LUCENE, null);
+        ValidationException validationException = validateNotTrainingContext(shouldRequireTraining, BuiltinKNNEngine.LUCENE, null);
         validationException = validateCompressionSupported(
             knnMethodConfigContext.getCompressionLevel(),
             SUPPORTED_COMPRESSION_LEVELS,
-            KNNEngine.LUCENE,
+            BuiltinKNNEngine.LUCENE,
             validationException
         );
         validationException = validateCompressionNotx1WhenOnDisk(knnMethodConfigContext, validationException);

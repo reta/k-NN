@@ -5,8 +5,6 @@
 
 package org.opensearch.knn.quantization.factory;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.opensearch.knn.quantization.enums.ScalarQuantizationType;
 import org.opensearch.knn.quantization.models.quantizationParams.ScalarQuantizationParams;
 import org.opensearch.knn.quantization.quantizer.MultiBitScalarQuantizer;
@@ -16,9 +14,7 @@ import org.opensearch.knn.quantization.quantizer.OneBitScalarQuantizer;
  * The QuantizerRegistrar class is responsible for registering default quantizers.
  * This class ensures that the registration happens only once in a thread-safe manner.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-final class QuantizerRegistrar {
-
+public class DefaultQuantizerRegistrar implements QuantizerRegistrar {
     /**
      * Registers default quantizers
      * <p>
@@ -26,7 +22,8 @@ final class QuantizerRegistrar {
      * even in a multi-threaded environment.
      * </p>
      */
-    static synchronized void registerDefaultQuantizers() {
+    @Override
+    public synchronized void registerQuantizers() {
         // Register OneBitScalarQuantizer for SQParams with VALUE_QUANTIZATION and SQTypes.ONE_BIT
         QuantizerRegistry.register(
             ScalarQuantizationParams.generateTypeIdentifier(ScalarQuantizationType.ONE_BIT),

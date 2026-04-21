@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.opensearch.knn.quantization.models.quantizationParams.QuantizationParams;
 import org.opensearch.knn.quantization.quantizer.Quantizer;
 
+import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -30,6 +31,7 @@ public final class QuantizerFactory {
      * @param <R>    the type of the output after quantization
      * @return an instance of {@link Quantizer} corresponding to the provided parameters
      */
+    @SuppressWarnings("unchecked")
     public static <P extends QuantizationParams, T, R> Quantizer<T, R> getQuantizer(final P params) {
         if (params == null) {
             throw new IllegalArgumentException("Quantization parameters must not be null.");
@@ -46,7 +48,9 @@ public final class QuantizerFactory {
         if (!isRegistered.get()) {
             synchronized (QuantizerFactory.class) {
                 if (!isRegistered.get()) {
-                    QuantizerRegistrar.registerDefaultQuantizers();
+                    for (final QuantizerRegistrar service : ServiceLoader.load(QuantizerRegistrar.class, QuantizerFactory.class.getClassLoader())) {
+                        service.registerQuantizers();
+                    }
                     isRegistered.set(true);
                 }
             }

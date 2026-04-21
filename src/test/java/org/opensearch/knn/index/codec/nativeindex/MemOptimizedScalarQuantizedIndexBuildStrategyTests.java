@@ -36,6 +36,7 @@ import org.opensearch.knn.KNNTestCase;
 import org.opensearch.knn.index.SpaceType;
 import org.opensearch.knn.index.VectorDataType;
 import org.opensearch.knn.index.codec.nativeindex.model.BuildIndexParams;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
 import org.opensearch.knn.index.engine.KNNEngine;
 import org.opensearch.knn.index.store.IndexOutputWithBuffer;
 import org.opensearch.knn.index.vectorvalues.KNNFloatVectorValues;
@@ -239,7 +240,7 @@ public class MemOptimizedScalarQuantizedIndexBuildStrategyTests extends KNNTestC
 
                 final BuildIndexParams buildIndexParams = BuildIndexParams.builder()
                     .field(fieldInfo.getName())
-                    .knnEngine(KNNEngine.FAISS)
+                    .knnEngine(BuiltinKNNEngine.FAISS)
                     .indexOutputWithBuffer(indexOutputWithBuffer)
                     .vectorDataType(VectorDataType.FLOAT)
                     .indexParameters(parameters)
@@ -284,7 +285,7 @@ public class MemOptimizedScalarQuantizedIndexBuildStrategyTests extends KNNTestC
 
         BuildIndexParams buildIndexParams = BuildIndexParams.builder()
             .indexOutputWithBuffer(indexOutputWithBuffer)
-            .knnEngine(KNNEngine.FAISS)
+            .knnEngine(BuiltinKNNEngine.FAISS)
             .vectorDataType(VectorDataType.FLOAT)
             .indexParameters(params)
             .knnVectorValuesSupplier(() -> knnVectorValues)
@@ -310,7 +311,7 @@ public class MemOptimizedScalarQuantizedIndexBuildStrategyTests extends KNNTestC
 
             // Then
             assertEquals("Simulated Phase 1 failure", thrown.getMessage());
-            mockedJNIService.verify(() -> JNIService.releaseSQIndex(eq(fakeIndexAddress), eq(KNNEngine.FAISS)));
+            mockedJNIService.verify(() -> JNIService.releaseSQIndex(eq(fakeIndexAddress), eq(BuiltinKNNEngine.FAISS)));
             mockedJNIService.verify(
                 () -> JNIService.writeIndex(any(), anyLong(), any(KNNEngine.class), anyMap(), eq(true)),
                 Mockito.never()

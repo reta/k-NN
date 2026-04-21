@@ -18,6 +18,7 @@ import org.opensearch.knn.index.codec.util.NativeMemoryCacheKeyHelper;
 import org.opensearch.knn.index.engine.qframe.QuantizationConfig;
 import org.opensearch.knn.index.util.IndexUtil;
 import org.opensearch.knn.jni.JNIService;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
 import org.opensearch.knn.index.engine.KNNEngine;
 import org.opensearch.knn.training.TrainingDataConsumer;
 import org.opensearch.knn.training.VectorReader;
@@ -41,10 +42,7 @@ public interface NativeMemoryLoadStrategy<T extends NativeMemoryAllocation, U ex
     T load(U nativeMemoryEntryContext) throws IOException;
 
     @Log4j2
-    class IndexLoadStrategy
-        implements
-            NativeMemoryLoadStrategy<NativeMemoryAllocation.IndexAllocation, NativeMemoryEntryContext.IndexEntryContext>,
-            Closeable {
+    class IndexLoadStrategy implements NativeMemoryLoadStrategy<IndexAllocation, NativeMemoryEntryContext.IndexEntryContext>, Closeable {
 
         private static IndexLoadStrategy INSTANCE;
 
@@ -67,8 +65,7 @@ public interface NativeMemoryLoadStrategy<T extends NativeMemoryAllocation, U ex
         }
 
         @Override
-        public NativeMemoryAllocation.IndexAllocation load(NativeMemoryEntryContext.IndexEntryContext indexEntryContext)
-            throws IOException {
+        public IndexAllocation load(NativeMemoryEntryContext.IndexEntryContext indexEntryContext) throws IOException {
             // Extract vector file name from the given cache key.
             // Ex: _0_165_my_field.faiss@1vaqiupVUwvkXAG4Qc/RPg==
             final String cacheKey = indexEntryContext.getKey();
@@ -80,7 +77,7 @@ public interface NativeMemoryLoadStrategy<T extends NativeMemoryAllocation, U ex
             }
 
             // Prepare for opening index input from directory.
-            final KNNEngine knnEngine = KNNEngine.getEngineNameFromPath(vectorFileName);
+            final KNNEngine knnEngine = BuiltinKNNEngine.getEngineNameFromPath(vectorFileName);
             final Directory directory = indexEntryContext.getDirectory();
             final int indexSizeKb = Math.toIntExact(directory.fileLength(vectorFileName) / 1024);
 
@@ -99,7 +96,7 @@ public interface NativeMemoryLoadStrategy<T extends NativeMemoryAllocation, U ex
             }
         }
 
-        private NativeMemoryAllocation.IndexAllocation createIndexAllocation(
+        private IndexAllocation createIndexAllocation(
             final NativeMemoryEntryContext.IndexEntryContext indexEntryContext,
             final KNNEngine knnEngine,
             final long indexAddress,
@@ -114,7 +111,7 @@ public interface NativeMemoryLoadStrategy<T extends NativeMemoryAllocation, U ex
                 JNIService.setSharedIndexState(indexAddress, sharedIndexState.getSharedIndexStateAddress(), knnEngine);
             }
 
-            return new NativeMemoryAllocation.IndexAllocation(
+            return new IndexAllocation(
                 executor,
                 indexAddress,
                 indexSizeKb,

@@ -7,7 +7,8 @@ package org.opensearch.knn.quantization.models.requests;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.opensearch.knn.index.engine.faiss.QFrameBitEncoder;
+
+import org.opensearch.knn.index.engine.QFrameBitEncoderDefaults;
 
 import java.io.IOException;
 
@@ -32,7 +33,7 @@ public abstract class TrainingRequest<T> {
      * @param totalNumberOfVectors the total number of vectors in one segment
      */
     public TrainingRequest(int totalNumberOfVectors) {
-        this(totalNumberOfVectors, QFrameBitEncoder.DEFAULT_ENABLE_RANDOM_ROTATION);
+        this(totalNumberOfVectors, QFrameBitEncoderDefaults.DEFAULT_ENABLE_RANDOM_ROTATION);
     }
 
     /**

@@ -13,7 +13,7 @@ package org.opensearch.knn.jni;
  */
 public class SimdVectorComputeService {
     static {
-        KNNLibraryLoader.loadSimdLibrary();
+        KNNEngineLibraryLoader.loadSimdLibrary();
     }
 
     /**

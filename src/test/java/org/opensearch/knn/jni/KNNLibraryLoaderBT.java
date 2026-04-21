@@ -29,7 +29,7 @@ public class KNNLibraryLoaderBT extends KNNTestCase {
         Method[] methods = KNNLibraryLoader.class.getDeclaredMethods();
 
         for (Method method : methods) {
-            if (!Modifier.isPrivate(method.getModifiers())) {
+            if (Modifier.isPublic(method.getModifiers())) {
                 try {
                     method.invoke(null);
                 } catch (Exception e) {

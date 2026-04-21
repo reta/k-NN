@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.opensearch.knn.indices.ModelMetadata;
+import org.opensearch.knn.indices.ModelConstants;
 
 import static org.opensearch.knn.common.KNNConstants.NAME;
 import static org.opensearch.knn.common.KNNConstants.PARAMETERS;
@@ -262,7 +262,7 @@ public class MethodComponentContext implements ToXContentFragment, Writeable {
                 // then the method will not work correctly. Therefore, we replace the delimiter with an uncommon
                 // sequence that is very unlikely to appear in the value itself.
                 // https://github.com/opensearch-project/k-NN/issues/1337
-                value = value.replace(ModelMetadata.DELIMITER, DELIMITER_PLACEHOLDER);
+                value = value.replace(ModelConstants.DELIMITER, DELIMITER_PLACEHOLDER);
                 stringBuilder.append(value).append(DELIMITER);
             }
         }
@@ -348,7 +348,7 @@ public class MethodComponentContext implements ToXContentFragment, Writeable {
         } else if (stringValue.equals("true") || stringValue.equals("false")) {
             value = Boolean.parseBoolean(stringValue);
         } else {
-            stringValue = stringValue.replace(DELIMITER_PLACEHOLDER, ModelMetadata.DELIMITER);
+            stringValue = stringValue.replace(DELIMITER_PLACEHOLDER, ModelConstants.DELIMITER);
             value = stringValue;
         }
 

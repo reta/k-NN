@@ -16,6 +16,7 @@ import org.junit.Assert;
 import org.mockito.MockedStatic;
 import org.opensearch.Version;
 import org.opensearch.knn.index.KNNSettings;
+import org.opensearch.knn.index.query.KNNQueryFactory;
 
 import java.util.Map;
 
@@ -61,7 +62,7 @@ public class IndexHyperParametersUtilTests extends TestCase {
         int efSearchValue = 100;
         Map<String, Object> methodParameters = Map.of(METHOD_PARAMETER_EF_SEARCH, efSearchValue);
 
-        int result = IndexHyperParametersUtil.getHNSWEFSearchValue(methodParameters, indexName);
+        int result = KNNQueryFactory.getHNSWEFSearchValue(methodParameters, indexName);
 
         Assert.assertEquals(efSearchValue, result);
     }
@@ -73,7 +74,7 @@ public class IndexHyperParametersUtilTests extends TestCase {
         try (MockedStatic<KNNSettings> knnSettingsMock = mockStatic(KNNSettings.class)) {
             knnSettingsMock.when(() -> KNNSettings.getEfSearchParam(indexName)).thenReturn(expectedValue);
 
-            int result = IndexHyperParametersUtil.getHNSWEFSearchValue(null, indexName);
+            int result = KNNQueryFactory.getHNSWEFSearchValue(null, indexName);
 
             Assert.assertEquals(expectedValue, result);
         }
@@ -87,7 +88,7 @@ public class IndexHyperParametersUtilTests extends TestCase {
         try (MockedStatic<KNNSettings> knnSettingsMock = mockStatic(KNNSettings.class)) {
             knnSettingsMock.when(() -> KNNSettings.getEfSearchParam(indexName)).thenReturn(expectedValue);
 
-            int result = IndexHyperParametersUtil.getHNSWEFSearchValue(methodParameters, indexName);
+            int result = KNNQueryFactory.getHNSWEFSearchValue(methodParameters, indexName);
 
             Assert.assertEquals(expectedValue, result);
         }

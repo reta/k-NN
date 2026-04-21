@@ -14,6 +14,7 @@ import org.opensearch.knn.index.engine.KNNMethodConfigContext;
 import org.opensearch.knn.index.engine.MethodComponent;
 import org.opensearch.knn.index.engine.MethodComponentContext;
 import org.opensearch.knn.index.engine.Parameter;
+import org.opensearch.knn.index.engine.QFrameBitEncoderDefaults;
 import org.opensearch.knn.index.engine.qframe.QuantizationConfig;
 import org.opensearch.knn.index.mapper.CompressionLevel;
 import org.opensearch.knn.quantization.enums.ScalarQuantizationType;
@@ -28,15 +29,13 @@ import static org.opensearch.knn.common.KNNConstants.INDEX_DESCRIPTION_PARAMETER
 /**
  * Quantization framework binary encoder,
  */
-public class QFrameBitEncoder implements Encoder {
+public class QFrameBitEncoder implements Encoder, QFrameBitEncoderDefaults {
 
     public static final String NAME = "binary";
     public static final String BITCOUNT_PARAM = "bits";
     private static final int DEFAULT_BITS = 1;
     public static final String ENABLE_ADC_PARAM = "enable_adc";
-    public static final Boolean DEFAULT_ENABLE_ADC = false;
     public static final String ENABLE_RANDOM_ROTATION_PARAM = "random_rotation";
-    public static final Boolean DEFAULT_ENABLE_RANDOM_ROTATION = false;
     private static final Set<Integer> validBitCounts = ImmutableSet.of(1, 2, 4);
     private static final Set<Integer> supportedBitCountsForADC = ImmutableSet.of(1);
     private static final Set<VectorDataType> SUPPORTED_DATA_TYPES = ImmutableSet.of(VectorDataType.FLOAT);

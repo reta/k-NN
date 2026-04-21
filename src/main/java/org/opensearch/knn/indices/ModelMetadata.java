@@ -31,6 +31,7 @@ import org.opensearch.knn.index.util.IndexUtil;
 import org.opensearch.knn.index.engine.MethodComponentContext;
 import org.opensearch.knn.index.SpaceType;
 import org.opensearch.knn.index.VectorDataType;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
 import org.opensearch.knn.index.engine.KNNEngine;
 
 import java.io.IOException;
@@ -43,7 +44,7 @@ import static org.opensearch.core.xcontent.DeprecationHandler.IGNORE_DEPRECATION
 @Log4j2
 public class ModelMetadata implements Writeable, ToXContentObject {
 
-    public static final String DELIMITER = ",";
+    public static final String DELIMITER = ModelConstants.DELIMITER;
 
     final private KNNEngine knnEngine;
     final private SpaceType spaceType;
@@ -143,7 +144,7 @@ public class ModelMetadata implements Writeable, ToXContentObject {
     ) {
         this.knnEngine = Objects.requireNonNull(knnEngine, "knnEngine must not be null");
         this.spaceType = Objects.requireNonNull(spaceType, "spaceType must not be null");
-        int maxDimensions = KNNEngine.getMaxDimensionByEngine(this.knnEngine);
+        int maxDimensions = BuiltinKNNEngine.getMaxDimensionByEngine(this.knnEngine);
         if (dimension <= 0 || dimension > maxDimensions) {
             throw new IllegalArgumentException(
                 String.format(

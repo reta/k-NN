@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 import org.opensearch.Version;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
-import org.opensearch.knn.index.engine.faiss.QFrameBitEncoder;
+import org.opensearch.knn.index.engine.QFrameBitEncoderDefaults;
 import org.opensearch.knn.quantization.enums.ScalarQuantizationType;
 
 import java.io.IOException;
@@ -30,9 +30,9 @@ import java.io.IOException;
 public class ScalarQuantizationParams implements QuantizationParams {
     private final ScalarQuantizationType sqType;
     @Builder.Default
-    private final boolean enableRandomRotation = QFrameBitEncoder.DEFAULT_ENABLE_RANDOM_ROTATION;
+    private final boolean enableRandomRotation = QFrameBitEncoderDefaults.DEFAULT_ENABLE_RANDOM_ROTATION;
     @Builder.Default
-    private final boolean enableADC = QFrameBitEncoder.DEFAULT_ENABLE_ADC;
+    private final boolean enableADC = QFrameBitEncoderDefaults.DEFAULT_ENABLE_ADC;
 
     /**
      * Static method to generate type identifier based on ScalarQuantizationType.
@@ -84,8 +84,8 @@ public class ScalarQuantizationParams implements QuantizationParams {
             this.enableRandomRotation = in.readBoolean();
             this.enableADC = in.readBoolean();
         } else {
-            this.enableRandomRotation = QFrameBitEncoder.DEFAULT_ENABLE_RANDOM_ROTATION;
-            this.enableADC = QFrameBitEncoder.DEFAULT_ENABLE_ADC;
+            this.enableRandomRotation = QFrameBitEncoderDefaults.DEFAULT_ENABLE_RANDOM_ROTATION;
+            this.enableADC = QFrameBitEncoderDefaults.DEFAULT_ENABLE_ADC;
         }
     }
 

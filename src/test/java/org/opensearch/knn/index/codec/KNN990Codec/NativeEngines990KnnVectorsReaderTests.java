@@ -27,6 +27,7 @@ import org.opensearch.knn.KNNTestCase;
 import org.opensearch.knn.common.KNNConstants;
 import org.opensearch.knn.index.codec.nativeindex.AbstractNativeEnginesKnnVectorsReader;
 import org.opensearch.knn.index.codec.KNNCodecTestUtil;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
 import org.opensearch.knn.index.engine.KNNEngine;
 import org.opensearch.knn.index.mapper.KNNVectorFieldMapper;
 import org.opensearch.knn.memoryoptsearch.VectorSearcher;
@@ -63,7 +64,7 @@ public class NativeEngines990KnnVectorsReaderTests extends KNNTestCase {
     public void testFlatVectorReaderIsCalled_whenNoQuantization() throws IOException {
         FieldInfo fieldInfo = KNNCodecTestUtil.FieldInfoBuilder.builder("field1")
             .fieldNumber(0)
-            .addAttribute(KNN_ENGINE, KNNEngine.FAISS.getName())
+            .addAttribute(KNN_ENGINE, BuiltinKNNEngine.FAISS.getName())
             .addAttribute(KNNVectorFieldMapper.KNN_FIELD, "true")
             .vectorEncoding(VectorEncoding.FLOAT32)
             .build();
@@ -80,7 +81,7 @@ public class NativeEngines990KnnVectorsReaderTests extends KNNTestCase {
     public void testBinaryVectorValuesIsCalled_whenQuantizationIsAvailable_thenSuccess() throws IOException {
         FieldInfo fieldInfo = KNNCodecTestUtil.FieldInfoBuilder.builder("field1")
             .fieldNumber(0)
-            .addAttribute(KNN_ENGINE, KNNEngine.FAISS.getName())
+            .addAttribute(KNN_ENGINE, BuiltinKNNEngine.FAISS.getName())
             .addAttribute(QFRAMEWORK_CONFIG, "type=binary,bits=2")
             .addAttribute(KNNVectorFieldMapper.KNN_FIELD, "true")
             .build();
@@ -88,7 +89,7 @@ public class NativeEngines990KnnVectorsReaderTests extends KNNTestCase {
         FieldInfo[] fieldInfoArray = new FieldInfo[] { fieldInfo };
         final FieldInfos fieldInfos = new FieldInfos(fieldInfoArray);
 
-        KNNEngine mockFaiss = spy(KNNEngine.FAISS);
+        KNNEngine mockFaiss = spy(BuiltinKNNEngine.FAISS);
         VectorSearcherFactory mockFactory = mock(VectorSearcherFactory.class);
         VectorSearcher mockSearcher = mock(VectorSearcher.class);
         when(mockSearcher.getByteVectorValues(any())).thenReturn(mock(ByteVectorValues.class));
@@ -102,18 +103,20 @@ public class NativeEngines990KnnVectorsReaderTests extends KNNTestCase {
         try (MockedStatic<KNNEngine> mockedStatic = mockStatic(KNNEngine.class)) {
             mockedStatic.when(() -> KNNEngine.getEngine(any())).thenReturn(mockFaiss);
             final Set<String> filesInSegment = Set.of("_0_165_field1.faiss");
-            mockedStatic.when(KNNEngine::getEnginesThatCreateCustomSegmentFiles).thenReturn(ImmutableSet.of(mockFaiss));
-            NativeEngines990KnnVectorsReader reader = createReader(fieldInfos, filesInSegment, flatVectorsReader);
-            reader.getByteVectorValues("field1");
-            verify(mockSearcher).getByteVectorValues(any());
-            verify(flatVectorsReader, Mockito.never()).getByteVectorValues("field1");
+            try (MockedStatic<BuiltinKNNEngine> mockedStatic2 = mockStatic(BuiltinKNNEngine.class)) {
+                mockedStatic2.when(BuiltinKNNEngine::getEnginesThatCreateCustomSegmentFiles).thenReturn(ImmutableSet.of(mockFaiss));
+                NativeEngines990KnnVectorsReader reader = createReader(fieldInfos, filesInSegment, flatVectorsReader);
+                reader.getByteVectorValues("field1");
+                verify(mockSearcher).getByteVectorValues(any());
+                verify(flatVectorsReader, Mockito.never()).getByteVectorValues("field1");
+            }
         }
     }
 
     public void testFlatVectorReaderIsCalled_whenEncodingIsByte_thenSuccess() throws IOException {
         FieldInfo fieldInfo = KNNCodecTestUtil.FieldInfoBuilder.builder("field1")
             .fieldNumber(0)
-            .addAttribute(KNN_ENGINE, KNNEngine.FAISS.getName())
+            .addAttribute(KNN_ENGINE, BuiltinKNNEngine.FAISS.getName())
             .addAttribute(KNNVectorFieldMapper.KNN_FIELD, "true")
             .vectorEncoding(VectorEncoding.BYTE)
             .build();
@@ -129,7 +132,7 @@ public class NativeEngines990KnnVectorsReaderTests extends KNNTestCase {
 
     @SneakyThrows
     public void testWhenMemoryOptimizedSearchIsEnabled_mixedCase() {
-        KNNEngine mockFaiss = spy(KNNEngine.FAISS);
+        KNNEngine mockFaiss = spy(BuiltinKNNEngine.FAISS);
         VectorSearcherFactory mockFactory = mock(VectorSearcherFactory.class);
         when(mockFactory.createVectorSearcher(any(), any(), any(), any(), any())).thenReturn(mock(VectorSearcher.class));
         when(mockFaiss.getVectorSearcherFactory()).thenReturn(mockFactory);
@@ -142,7 +145,7 @@ public class NativeEngines990KnnVectorsReaderTests extends KNNTestCase {
             // - field5: KNN field, FAISS, but it does not have file for some reason.
             final FieldInfo[] fieldInfoArray = new FieldInfo[] {
                 createFieldInfo("field1", null, 0),
-                createFieldInfo("field2", KNNEngine.LUCENE, 1),
+                createFieldInfo("field2", BuiltinKNNEngine.LUCENE, 1),
                 createFieldInfo("field3", mockFaiss, 2),
                 createFieldInfo("field4", mockFaiss, 3),
                 createFieldInfo("field5", mockFaiss, 4) };
@@ -152,36 +155,38 @@ public class NativeEngines990KnnVectorsReaderTests extends KNNTestCase {
             mockedStatic.when(() -> KNNEngine.getEngine(any())).thenAnswer(invocation -> {
                 final String strArg = invocation.getArgument(0);
                 // Intercept FAISS engine to return mock
-                if (strArg.equals(KNNEngine.FAISS.getName())) {
+                if (strArg.equals(BuiltinKNNEngine.FAISS.getName())) {
                     return mockFaiss;
                 }
 
                 // Otherwise return Lucene, as field2 is using Lucene.
-                return KNNEngine.LUCENE;
+                return BuiltinKNNEngine.LUCENE;
             });
 
-            mockedStatic.when(KNNEngine::getEnginesThatCreateCustomSegmentFiles).thenReturn(ImmutableSet.of(mockFaiss));
-            FlatVectorsReader flatVectorsReader = mock(FlatVectorsReader.class);
-            when(flatVectorsReader.getFlatVectorScorer()).thenReturn(FlatVectorScorerUtil.getLucene99FlatVectorsScorer());
-            final NativeEngines990KnnVectorsReader reader_field_2 = createReader(fieldInfos, filesInSegment, flatVectorsReader);
-            final NativeEngines990KnnVectorsReader reader_field_3 = createReader(fieldInfos, filesInSegment, flatVectorsReader);
-            final NativeEngines990KnnVectorsReader reader_field_4 = createReader(fieldInfos, filesInSegment, flatVectorsReader);
+            try (MockedStatic<BuiltinKNNEngine> mockedStatic2 = mockStatic(BuiltinKNNEngine.class)) {
+                mockedStatic2.when(BuiltinKNNEngine::getEnginesThatCreateCustomSegmentFiles).thenReturn(ImmutableSet.of(mockFaiss));
+                FlatVectorsReader flatVectorsReader = mock(FlatVectorsReader.class);
+                when(flatVectorsReader.getFlatVectorScorer()).thenReturn(FlatVectorScorerUtil.getLucene99FlatVectorsScorer());
+                final NativeEngines990KnnVectorsReader reader_field_2 = createReader(fieldInfos, filesInSegment, flatVectorsReader);
+                final NativeEngines990KnnVectorsReader reader_field_3 = createReader(fieldInfos, filesInSegment, flatVectorsReader);
+                final NativeEngines990KnnVectorsReader reader_field_4 = createReader(fieldInfos, filesInSegment, flatVectorsReader);
 
-            assertFalse(getVectorSearcherHolders(reader_field_2).isSet());
-            assertFalse(getVectorSearcherHolders(reader_field_3).isSet());
-            assertFalse(getVectorSearcherHolders(reader_field_4).isSet());
+                assertFalse(getVectorSearcherHolders(reader_field_2).isSet());
+                assertFalse(getVectorSearcherHolders(reader_field_3).isSet());
+                assertFalse(getVectorSearcherHolders(reader_field_4).isSet());
 
-            // Try search for supported field types
-            reader_field_2.search("field3", new float[] { 1, 2, 3, 4 }, null, null);
-            reader_field_3.search("field4", new float[] { 1, 2, 3, 4 }, null, null);
-            Assert.assertThrows(
-                UnsupportedOperationException.class,
-                () -> { reader_field_4.search("field5", new float[] { 1, 2, 3, 4 }, null, null); }
-            );
+                // Try search for supported field types
+                reader_field_2.search("field3", new float[] { 1, 2, 3, 4 }, null, null);
+                reader_field_3.search("field4", new float[] { 1, 2, 3, 4 }, null, null);
+                Assert.assertThrows(
+                    UnsupportedOperationException.class,
+                    () -> { reader_field_4.search("field5", new float[] { 1, 2, 3, 4 }, null, null); }
+                );
 
-            // Check holders are set now
-            assertTrue(getVectorSearcherHolders(reader_field_2).isSet());
-            assertTrue(getVectorSearcherHolders(reader_field_3).isSet());
+                // Check holders are set now
+                assertTrue(getVectorSearcherHolders(reader_field_2).isSet());
+                assertTrue(getVectorSearcherHolders(reader_field_3).isSet());
+            }
         }
     }
 

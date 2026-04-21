@@ -200,7 +200,7 @@ public class NativeMemoryCacheManager implements Closeable {
         return cache.asMap()
             .values()
             .stream()
-            .filter(nativeMemoryAllocation -> nativeMemoryAllocation instanceof NativeMemoryAllocation.IndexAllocation)
+            .filter(nativeMemoryAllocation -> nativeMemoryAllocation instanceof IndexAllocation)
             .mapToLong(NativeMemoryAllocation::getSizeInKB)
             .sum();
     }
@@ -225,10 +225,8 @@ public class NativeMemoryCacheManager implements Closeable {
         return cache.asMap()
             .values()
             .stream()
-            .filter(nativeMemoryAllocation -> nativeMemoryAllocation instanceof NativeMemoryAllocation.IndexAllocation)
-            .filter(
-                indexAllocation -> indexName.equals(((NativeMemoryAllocation.IndexAllocation) indexAllocation).getOpenSearchIndexName())
-            )
+            .filter(nativeMemoryAllocation -> nativeMemoryAllocation instanceof IndexAllocation)
+            .filter(indexAllocation -> indexName.equals(((IndexAllocation) indexAllocation).getOpenSearchIndexName()))
             .mapToLong(NativeMemoryAllocation::getSizeInKB)
             .sum();
     }
@@ -292,10 +290,8 @@ public class NativeMemoryCacheManager implements Closeable {
             cache.asMap()
                 .values()
                 .stream()
-                .filter(nativeMemoryAllocation -> nativeMemoryAllocation instanceof NativeMemoryAllocation.IndexAllocation)
-                .filter(
-                    indexAllocation -> indexName.equals(((NativeMemoryAllocation.IndexAllocation) indexAllocation).getOpenSearchIndexName())
-                )
+                .filter(nativeMemoryAllocation -> nativeMemoryAllocation instanceof IndexAllocation)
+                .filter(indexAllocation -> indexName.equals(((IndexAllocation) indexAllocation).getOpenSearchIndexName()))
                 .count()
         ).intValue();
     }
@@ -457,10 +453,8 @@ public class NativeMemoryCacheManager implements Closeable {
         return cache.asMap()
             .values()
             .stream()
-            .filter(nativeMemoryAllocation -> nativeMemoryAllocation instanceof NativeMemoryAllocation.IndexAllocation)
-            .filter(
-                indexAllocation -> indexName.equals(((NativeMemoryAllocation.IndexAllocation) indexAllocation).getOpenSearchIndexName())
-            )
+            .filter(nativeMemoryAllocation -> nativeMemoryAllocation instanceof IndexAllocation)
+            .filter(indexAllocation -> indexName.equals(((IndexAllocation) indexAllocation).getOpenSearchIndexName()))
             .findFirst();
     }
 
@@ -505,12 +499,12 @@ public class NativeMemoryCacheManager implements Closeable {
      */
     public Map<String, Map<String, Object>> getIndicesCacheStats() {
         Map<String, Map<String, Object>> statValues = new HashMap<>();
-        NativeMemoryAllocation.IndexAllocation indexAllocation;
+        IndexAllocation indexAllocation;
 
         for (Map.Entry<String, NativeMemoryAllocation> entry : cache.asMap().entrySet()) {
 
-            if (entry.getValue() instanceof NativeMemoryAllocation.IndexAllocation) {
-                indexAllocation = (NativeMemoryAllocation.IndexAllocation) entry.getValue();
+            if (entry.getValue() instanceof IndexAllocation) {
+                indexAllocation = (IndexAllocation) entry.getValue();
                 String indexName = indexAllocation.getOpenSearchIndexName();
 
                 Map<String, Object> indexMap = statValues.computeIfAbsent(indexName, name -> new HashMap<>());

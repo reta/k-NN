@@ -22,6 +22,7 @@ import org.opensearch.knn.index.SpaceType;
 import org.opensearch.knn.index.VectorDataType;
 import org.opensearch.knn.index.engine.SpaceTypeResolver;
 import org.opensearch.knn.index.engine.KNNEngine;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
 import org.opensearch.knn.index.engine.EngineResolver;
 import org.opensearch.knn.index.engine.KNNMethodConfigContext;
 import org.opensearch.knn.index.mapper.CompressionLevel;
@@ -161,7 +162,7 @@ public class RestTrainModelHandler extends BaseRestHandler {
             topLevelSpaceType = SpaceTypeResolver.getDefaultSpaceType(vectorDataType);
         }
         if ((knnMethodContext == null || knnMethodContext.getKnnEngine() == KNNEngine.UNDEFINED) && topLevelEngine == KNNEngine.UNDEFINED) {
-            topLevelEngine = KNNEngine.FAISS;
+            topLevelEngine = BuiltinKNNEngine.FAISS;
         }
 
         ensureIfSetThenEquals(

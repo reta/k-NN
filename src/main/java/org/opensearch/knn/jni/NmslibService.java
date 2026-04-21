@@ -11,7 +11,7 @@
 
 package org.opensearch.knn.jni;
 
-import org.opensearch.knn.index.engine.KNNEngine;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
 import org.opensearch.knn.index.query.KNNQueryResult;
 import org.opensearch.knn.index.store.IndexInputWithBuffer;
 import org.opensearch.knn.index.store.IndexOutputWithBuffer;
@@ -33,9 +33,9 @@ import java.util.Map;
 class NmslibService {
 
     static {
-        KNNLibraryLoader.loadNmslibLibrary();
+        KNNEngineLibraryLoader.loadNmslibLibrary();
         initLibrary();
-        KNNEngine.NMSLIB.setInitialized(true);
+        BuiltinKNNEngine.NMSLIB.setInitialized(true);
     }
 
     /**

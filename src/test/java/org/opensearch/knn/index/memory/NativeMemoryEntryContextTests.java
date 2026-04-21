@@ -19,9 +19,9 @@ import org.apache.lucene.store.MMapDirectory;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.knn.KNNTestCase;
 import org.opensearch.knn.TestUtils;
+import org.opensearch.knn.index.engine.BuiltinKNNEngine;
 import org.opensearch.knn.index.engine.qframe.QuantizationConfig;
 import org.opensearch.knn.index.VectorDataType;
-import org.opensearch.knn.index.engine.KNNEngine;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -54,14 +54,7 @@ public class NativeMemoryEntryContextTests extends KNNTestCase {
             )
         );
 
-        NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            null,
-            0,
-            10,
-            KNNEngine.DEFAULT,
-            "test-path",
-            "test-name"
-        );
+        IndexAllocation indexAllocation = new IndexAllocation(null, 0, 10, BuiltinKNNEngine.DEFAULT, "test-path", "test-name");
 
         when(indexLoadStrategy.load(indexEntryContext)).thenReturn(indexAllocation);
 
@@ -80,14 +73,7 @@ public class NativeMemoryEntryContextTests extends KNNTestCase {
             "test"
         );
 
-        NativeMemoryAllocation.IndexAllocation indexAllocation = new NativeMemoryAllocation.IndexAllocation(
-            null,
-            0,
-            10,
-            KNNEngine.DEFAULT,
-            "test-path",
-            "test-name"
-        );
+        IndexAllocation indexAllocation = new IndexAllocation(null, 0, 10, BuiltinKNNEngine.DEFAULT, "test-path", "test-name");
 
         assertThrows(IllegalStateException.class, indexEntryContext::load);
     }
